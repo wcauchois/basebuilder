@@ -1,0 +1,9 @@
+{
+  "foo": {
+    "sources": ["scripts/foo.js"]
+  },
+  "main": {
+    "sources": ["scripts/main.js"],
+    "deps": ["foo"]
+  }
+}
