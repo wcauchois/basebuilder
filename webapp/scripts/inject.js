@@ -12,7 +12,7 @@ BB.Inject = (function(BB) {
       var cachedServices = {};
       _.each(requires, function(r) {
         if (!registeredServices.has(r)) {
-          throw new Error("Service '" + r "' hasn't been defined yet!");
+          throw new Error("Service '" + r + "' hasn't been defined yet!");
         }
         cachedServices[r] = registeredServices[r];
       });

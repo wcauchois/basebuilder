@@ -32,4 +32,5 @@ BB.main.Application = BB.Class.extend({
   }
 });
 
+BB.main.Application.getInstance().run();
 
