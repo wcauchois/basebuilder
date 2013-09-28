@@ -17,12 +17,12 @@ build_blender_asset = (name, cb) ->
   obj_path = path.join OBJ_ASSETS_DIR, change_ext(name, '.obj')
   js_path = path.join MODELS_DIR, change_ext(name, '.js')
 
-  blender_convert_cmd = "blender #{blend_path} 
-    --background --python scripts/blender_export_obj.py 
+  blender_convert_cmd = "blender #{blend_path}
+    --background --python scripts/blender_export_obj.py
     -- #{obj_path}"
   three_js_convert_cmd = "./scripts/convert_obj_three.py
     -i #{obj_path} -o #{js_path}"
-  
+
   async.series [
     (cb) -> exec blender_convert_cmd, cb
     (cb) -> exec three_js_convert_cmd, cb
