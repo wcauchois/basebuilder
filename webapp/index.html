@@ -11,7 +11,7 @@
         float y = floor(vUv.y / 0.004) * 0.004;
         gl_FragColor = texture2D(tDiffuse, vec2(x, y));
       }
-		</script>
+    </script>
 
 		<script id="screenVertexShader" type="x-shader/x-vertex">
       varying vec2 vUv;
@@ -20,7 +20,7 @@
         vUv = uv;
         gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
       }
-		</script>
+    </script>
 
     <!-- Third-party includes -->
     <script type="text/javascript" src="3rdparty/three.min.js"></script>
