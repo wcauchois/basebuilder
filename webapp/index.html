@@ -2,12 +2,31 @@
 <html>
   <head>
     <title>BaseBuilder</title>
+    <script id="screenFragmentShader" type="x-shader/x-fragment">
+      varying vec2 vUv;
+      uniform sampler2D tDiffuse;
+
+      void main() {
+        float x = floor(vUv.x / 0.004) * 0.004;
+        float y = floor(vUv.y / 0.004) * 0.004;
+        gl_FragColor = texture2D(tDiffuse, vec2(x, y));
+      }
+		</script>
+
+		<script id="screenVertexShader" type="x-shader/x-vertex">
+      varying vec2 vUv;
+
+      void main() {
+        vUv = uv;
+        gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+      }
+		</script>
+
     <!-- Third-party includes -->
     <script type="text/javascript" src="3rdparty/three.min.js"></script>
     <script type="text/javascript" src="3rdparty/underscore-min.js"></script>
     <!-- Application scripts -->
     <script type="text/javascript" src="scripts/base.js"></script>
-    <script type="text/javascript" src="scripts/inject.js"></script>
     <!-- Load the rest from bundles.json -->
     <script type="text/javascript" src="scripts/loader.js"></script>
   </head>

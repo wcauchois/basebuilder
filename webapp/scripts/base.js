@@ -52,3 +52,9 @@ BB.getJSON = function(path, cb) {
   req.send();
 };
 
+BB.noop = function() {};
+
+BB.abstractMethod = function() {
+  throw new Error("Abstract method not implemented!");
+};
+
