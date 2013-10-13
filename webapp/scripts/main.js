@@ -37,91 +37,15 @@ BB.EventTarget = BB.Class.extend({
 
 //BB.Debug = new BB.debug.Debugger(); // Convenient alias for instance.
 
-BB.ResourceManager = BB.Class.extend({
-  initialize: function() {
-    this.jsonLoader = new THREE.JSONLoader();
-    this.geometries_ = {}; // Loaded (and in-progress) geometries
-    this.geometryBatch_ = [];
-    this.batching_ = false;
-    this.onDone_ = null;
-  },
 
-  allLoaded: function(identifiers) {
-    return _.every(identifiers || _.values(this.geometries_),
-      function(entry) { return typeof entry !== 'function' });
-  },
+BB.namespace('BB.buildings');
 
-  beginLoad: function() {
-    this.batching_ = true;
-  },
-
-  endLoad: function(onDone) {
-    this.batching_ = false;
-    this.onDone_ = onDone;
-    this.maybeFinish_();
-  },
-
-  maybeFinish_: function() {
-    if (!BB.isNull(this.onDone_) && this.allLoaded(this.geometryBatch_)) {
-      this.onDone_();
-      this.geometryBatch_ = new Array();
-      this.onDone_ = null;
-    }
-  },
-
-  onLoadDone_: function() {
-    this.maybeFinish_();
-  },
-
-  requestGeometry: function(identifier, callback) {
-    if (this.geometries_.hasOwnProperty(identifier)) {
-      if (typeof this.geometries[identifier] === 'function') {
-        // The resource is currently loading; call the function with the
-        // callback to add it to the list of waiters.
-        this.geometries_[identifier](callback);
-      } else {
-        callback(this.geometries_[identifier]);
-      }
-    } else {
-      if (this.batching_) {
-        this.geometryBatch_.push(identifier);
-      }
-
-      _.bind(function() {
-        var waiters = [callback];
-        this.geometries_[identifier] = function(otherCallback) {
-          waiters.push(otherCallback);
-        }
-        this.jsonLoader.load(identifier, _.bind(function(geometry) {
-          this.geometries_[identifier] = geometry;
-          _.each(waiters, function(waiter) {
-            waiter(geometry);
-          });
-          this.onLoadDone_();
-        }, this));
-      }, this)();
-    }
-  }
-});
-
-
-BB.getParameters = (function() {
-  var FN_ARGS = /^function\s*[^\(]*\(\s*([^\)]*)\)/m;
-  var FN_ARG_SPLIT = /,/;
-  var FN_ARG = /^\s*(_?)(\S+?)\1\s*$/;
-  var STRIP_COMMENTS = /((\/\/.*$)|(\/\*[\s\S]*?\*\/))/mg;
-
-  return function(target) {
-    var text = target.toString();
-    return _.map(text.match(FN_ARGS)[1].split(','),
-      function(s) { return s.trim(); });
-  };
-})();
-
-BB.namespace('BB.building');
-BB.building.FooBuilding = BB.Class.extend({
+BB.buildings.FooBuilding = BB.Class.extend({
   initialize: function(scene, resourceManager, options) {
     this.scene = scene;
+    console.log('options: ' + typeof options);
+    this.position = options.position || new THREE.Vector2(0, 0);
+    console.log(this.position);
     resourceManager.requestGeometry('models/generator_top.js',
       _.bind(function(geometry) {
         var material = new THREE.MeshNormalMaterial();
@@ -129,6 +53,8 @@ BB.building.FooBuilding = BB.Class.extend({
         this.mesh.scale.x = 0.07;
         this.mesh.scale.y = 0.15;
         this.mesh.scale.z = 0.07;
+        this.mesh.position.x = this.position.x;
+        this.mesh.position.y = this.position.y;
         this.scene.add(this.mesh);
         this.onLoad();
       }, this));
@@ -151,11 +77,6 @@ BB.Module = BB.Class.extend({
 
   injectNew: function(ctor) {
     var params = BB.getParameters(ctor.prototype.initialize);
-    console.log(params);
-    console.log(this.provides_);
-    console.log('resourceManager' in this.provides_);
-    console.log(this.provides_.hasOwnProperty('resourceManager'));
-
     var injectedParams = params.slice(0, -1);
     var args = [null].concat(_.map(injectedParams, function(p) {
       console.log(this.provides_);
@@ -165,8 +86,9 @@ BB.Module = BB.Class.extend({
       }
       return this.provides_[p];
     }, this));
-    // The last parameter is provided as-is.
-    args.push(params[params.length - 1]);
+    // TODO this should only do the last argument thing (that's how it works!)
+    _.each(Array.prototype.slice.call(arguments, 1),
+      function(x) { args.push(x); });
 
     // http://stackoverflow.com/a/14378462/1480571
     var Factory = ctor.bind.apply(ctor, args);
@@ -178,7 +100,7 @@ BB.main.IsometricCamera = function() {
   THREE.Camera.call(this);
   // http://stackoverflow.com/questions/1059200/true-isometric-projection-with-opengl
   var dist = Math.sqrt(1.0 / 3.0); // Camera will be one unit away from the origin
-  this.position = new THREE.Vector3(dist, dist + 0.05, dist);
+  this.position = new THREE.Vector3(dist, dist, dist);
   this.up = new THREE.Vector3(0.0, 1.0, 0.0);
   this.lookAt(new THREE.Vector3(0.0, 0.0, 0.0));
   //this.lookAt(dist, dist, dist, /* Camera position */
@@ -190,8 +112,10 @@ BB.main.IsometricCamera.prototype = Object.create(THREE.Camera.prototype);
 BB.main.Application = BB.Module.extend({
   initialize: function() {
     BB.main.Application.__super__.initialize.call(this);
-    this.screenWidth = window.innerWidth;
-    this.screenHeight = window.innerHeight;
+    //this.screenWidth = window.innerWidth;
+    //this.screenHeight = window.innerHeight;
+    this.screenWidth = 1000;
+    this.screenHeight = 600;
 
     this.renderer = new THREE.WebGLRenderer();
     this.renderer.setSize(this.screenWidth, this.screenHeight);
@@ -246,12 +170,24 @@ BB.main.Application = BB.Module.extend({
       this.animate();
     }, this));*/
     //this.addGridLines();
+    this.raycaster = new THREE.Raycaster();
+    this.projector = new THREE.Projector();
+    this.mousePos = new THREE.Vector2();
+    document.addEventListener('mousemove', _.bind(function(event) {
+      event.preventDefault();
+      this.mousePos.x = (event.clientX / this.screenWidth) * 2 - 1;
+      this.mousePos.y = -(event.clientY / this.screenHeight) * 2 + 1;
+    }, this), false);
     document.body.appendChild(this.renderer.domElement);
 
     this.provide('resourceManager', new BB.ResourceManager());
     this.provide('scene', this.mainScene);
     this.resourceManager.beginLoad();
-    this.foo1 = this.injectNew(BB.building.FooBuilding, {});
+    this.foo1 = this.injectNew(BB.buildings.FooBuilding, {});
+    this.foo2 = this.injectNew(BB.buildings.FooBuilding, {position: new THREE.Vector2(0.5, 0.1)});
+    this.foo2 = this.injectNew(BB.buildings.FooBuilding, {position: new THREE.Vector2(0.7, 0.1)});
+    this.foo2 = this.injectNew(BB.buildings.FooBuilding, {position: new THREE.Vector2(0.9, 0.1)});
+    this.foo2 = this.injectNew(BB.buildings.FooBuilding, {position: new THREE.Vector2(0.9, 0.3)});
     this.resourceManager.endLoad(_.bind(this.animate, this));
   },
 
@@ -267,6 +203,34 @@ BB.main.Application = BB.Module.extend({
     this.theMesh.scale.x = 0.07;
     this.theMesh.scale.y = 0.15;
     this.theMesh.scale.z = 0.07;*/
+    if (typeof this.foo1.mesh !== 'undefined') {
+      //this.foo1.mesh.position.y += 0.001;
+      //var vector = new THREE.Vector3(this.mousePos.x, this.mousePos.y, 1.0);
+      //this.projector.unprojectVector(vector, this.mainCamera);
+      //this.foo1.mesh.position.x = vector.z;
+      var vector = new THREE.Vector3(this.mousePos.x, this.mousePos.y, 1.0);
+      //vector.projectOnVector(new THREE.Vector3(1.0, 0.0, 0.0));
+      //vector.applyAxisAngle(new THREE.Vector3(0.0, 1.0, 0.0), Math.PI);
+      this.foo1.mesh.position.x = vector.x;
+      this.foo1.mesh.position.z = vector.y;
+      //this.foo1.mesh.position.x = this.mousePos.x;
+      //this.foo1.mesh.position.z = this.mousePos.y;
+    }
+    var vector = new THREE.Vector3(this.mousePos.x, this.mousePos.y, 1.0);
+    //console.log(this.mainCamera.position);
+    var X = this.mainCamera.position.clone();
+    //X.negate();
+    var plane = new THREE.Plane(X, 0.0);
+    this.projector.unprojectVector(vector, this.mainCamera);
+    this.raycaster.set(this.mainCamera.position, vector.sub(this.mainCamera.position).normalize());
+    var RC = this.raycaster;
+    //var RC = this.projector.pickingRay(vector, this.mainCamera);
+    var intersects = RC.intersectObjects(this.mainScene.children);
+    if (intersects.length > 0) {
+      console.log(intersects);
+    }
+    //console.log(this.mousePos);
+
     this.render();
   },
 

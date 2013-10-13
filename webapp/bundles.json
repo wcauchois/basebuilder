@@ -2,8 +2,11 @@
   "foo": {
     "sources": ["scripts/foo.js"]
   },
+  "core": {
+    "sources": ["scripts/resource-manager.js"]
+  },
   "main": {
     "sources": ["scripts/main.js"],
-    "deps": ["foo"]
+    "deps": ["core", "foo"]
   }
 }

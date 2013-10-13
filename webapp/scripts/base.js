@@ -56,6 +56,20 @@ BB.getJSON = function(path, cb) {
   req.send();
 };
 
+// http://stackoverflow.com/a/9924463/1480571
+BB.getParameters = (function() {
+  var FN_ARGS = /^function\s*[^\(]*\(\s*([^\)]*)\)/m;
+  var FN_ARG_SPLIT = /,/;
+  var FN_ARG = /^\s*(_?)(\S+?)\1\s*$/;
+  var STRIP_COMMENTS = /((\/\/.*$)|(\/\*[\s\S]*?\*\/))/mg;
+
+  return function(target) {
+    var text = target.toString();
+    return _.map(text.match(FN_ARGS)[1].split(','),
+      function(s) { return s.trim(); });
+  };
+})();
+
 BB.noop = function() {};
 
 BB.abstractMethod = function() {
