@@ -15,6 +15,10 @@ BB.isDefined = function(v) {
   return typeof v !== 'undefined';
 };
 
+BB.isNull = function(v) {
+  return v === null;
+};
+
 BB.Class = function() {
   if (BB.isDefined(this['initialize'])) {
     this.initialize.apply(this, arguments);

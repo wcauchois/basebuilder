@@ -7,7 +7,7 @@
       uniform sampler2D tDiffuse;
 
       //const float pixelSize = 0.005;
-      const float pixelSize = 0.00005;
+      const float pixelSize = 0.003;
 
       void main() {
         float x = floor(vUv.x / pixelSize) * pixelSize;
@@ -32,8 +32,14 @@
     <script type="text/javascript" src="scripts/base.js"></script>
     <!-- Load the rest from bundles.json -->
     <script type="text/javascript" src="scripts/loader.js"></script>
+
+    <link rel="stylesheet/less" type="text/css" href="styles.less" />
+    <script type="text/javascript" src="3rdparty/less-1.4.1.min.js"></script>
   </head>
   <body>
+    <div id="debugSliders">
+      <input type="range" min="0" max="100" />
+    </div>
   </body>
 </html>
 
