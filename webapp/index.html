@@ -6,9 +6,12 @@
       varying vec2 vUv;
       uniform sampler2D tDiffuse;
 
+      //const float pixelSize = 0.005;
+      const float pixelSize = 0.00005;
+
       void main() {
-        float x = floor(vUv.x / 0.004) * 0.004;
-        float y = floor(vUv.y / 0.004) * 0.004;
+        float x = floor(vUv.x / pixelSize) * pixelSize;
+        float y = floor(vUv.y / pixelSize) * pixelSize;
         gl_FragColor = texture2D(tDiffuse, vec2(x, y));
       }
     </script>

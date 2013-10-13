@@ -1,6 +1,19 @@
 
 BB.namespace('BB.main');
 
+BB.main.IsometricCamera = function() {
+  THREE.Camera.call(this);
+  // http://stackoverflow.com/questions/1059200/true-isometric-projection-with-opengl
+  var dist = Math.sqrt(1.0 / 3.0); // Camera will be one unit away from the origin
+  this.position = new THREE.Vector3(dist, dist, dist);
+  this.up = new THREE.Vector3(0.0, 1.0, 0.0);
+  this.lookAt(new THREE.Vector3(0.0, 0.0, 0.0));
+  //this.lookAt(dist, dist, dist, /* Camera position */
+    //0.0, 0.0, 0.0,              /* Where the camera is pointing at */
+    //0.0, 1.0, 0.0);             /* Which direction is up */
+};
+BB.main.IsometricCamera.prototype = Object.create(THREE.Camera.prototype);
+
 BB.main.Application = BB.Class.extend({
   initialize: function() {
     this.screenWidth = window.innerWidth;
@@ -9,9 +22,10 @@ BB.main.Application = BB.Class.extend({
     this.renderer = new THREE.WebGLRenderer();
     this.renderer.setSize(this.screenWidth, this.screenHeight);
 
-    this.mainCamera = new THREE.PerspectiveCamera(
-      75, this.screenWidth / this.screenHeight, 1, 10000);
-    this.mainCamera.position.z = 500;
+    //this.mainCamera = new THREE.PerspectiveCamera(
+    //  75, this.screenWidth / this.screenHeight, 1, 10000);
+    this.mainCamera = new BB.main.IsometricCamera();
+    //this.mainCamera.position.z = 500;
     this.mainScene = new THREE.Scene();
 
     this.rtScene = new THREE.Scene();
@@ -41,12 +55,20 @@ BB.main.Application = BB.Class.extend({
     var loader = new THREE.JSONLoader();
     loader.load('models/generator_top.js', _.bind(function(geometry) {
       var material = new THREE.MeshNormalMaterial();
+      //material.side = THREE.DoubleSide;
       var mesh = new THREE.Mesh(geometry, material);
-      mesh.scale.x = 100;
-      mesh.scale.y = 100;
-      mesh.scale.z = 100;
+      //mesh.scale.x = 10;
+      //mesh.scale.y = 10;
+      //mesh.scale.z = 10;
+      //mesh.position.z = -10;
       this.mainScene.add(mesh);
       this.theMesh = mesh;
+      var mesh2 = new THREE.Mesh(geometry, material);
+      mesh2.scale.x = 100;
+      mesh2.scale.y = 100;
+      mesh2.scale.z = 100;
+      mesh2.position.y = 200;
+      //this.mainScene.add(mesh2);
       this.animate();
     }, this));
     //this.addGridLines();
@@ -56,6 +78,14 @@ BB.main.Application = BB.Class.extend({
   animate: function() {
     requestAnimationFrame(_.bind(this.animate, this));
     this.theMesh.rotation.y += 0.02;
+    //this.theMesh.rotation.x += 0.02;
+    /*this.theMesh.position.x = Math.random() * 100.0 - 50.0;
+    this.theMesh.position.y = Math.random() * 100.0 - 50.0;
+    this.theMesh.position.z = Math.random() * 100.0 - 50.0;*/
+    this.theMesh.position.y = 0.2;
+    this.theMesh.scale.x = 0.2;
+    this.theMesh.scale.y = 0.2;
+    this.theMesh.scale.z = 0.2;
     this.render();
   },
 
