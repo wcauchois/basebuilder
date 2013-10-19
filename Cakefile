@@ -1,11 +1,14 @@
-fs     = require 'fs'
-path   = require 'path'
-{exec} = require 'child_process'
-async  = require 'async'
+fs      = require 'fs'
+path    = require 'path'
+{exec}  = require 'child_process'
+async   = require 'async'
+static_ = require 'node-static'
+http    = require 'http'
 
 OBJ_ASSETS_DIR = 'assets/obj'
 BLENDER_ASSETS_DIR = 'assets/blend'
 MODELS_DIR = 'webapp/models'
+DEVSERVER_PORT = 8000
 
 change_ext = (file_name, new_ext) ->
   original_ext = path.extname(file_name)
@@ -27,6 +30,22 @@ build_blender_asset = (name, cb) ->
     (cb) -> exec blender_convert_cmd, cb
     (cb) -> exec three_js_convert_cmd, cb
   ], cb
+
+task 'serve', 'Spawn a web server for development', (options) ->
+  file_server = new static_.Server('./webapp')
+  last_request_time = null
+  http.createServer((request, response) ->
+    request.on('end', () ->
+      date = new Date()
+      date_str = "#{date.getHours()}:#{date.getMinutes()}:#{date.getSeconds()}"
+      if last_request_time? and (date.getTime() - last_request_time) > 500
+        console.log Array(80).join('_')
+      console.log "[#{date_str}] #{request.method} #{request.url}"
+      file_server.serve(request, response)
+      last_request_time = date.getTime()
+    ).resume()
+  ).listen DEVSERVER_PORT
+  console.log "Listening on port #{DEVSERVER_PORT}"
 
 task 'build:assets', 'Convert assets into a JavaScript format', (options) ->
   blender_files = fs.readdirSync(BLENDER_ASSETS_DIR)
