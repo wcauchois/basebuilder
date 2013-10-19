@@ -51,3 +51,4 @@ task 'build:assets', 'Convert assets into a JavaScript format', (options) ->
   blender_files = fs.readdirSync(BLENDER_ASSETS_DIR)
   async.each blender_files, build_blender_asset, (err) ->
     throw new Error(err) if err
+
