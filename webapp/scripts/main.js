@@ -43,9 +43,7 @@ BB.namespace('BB.buildings');
 BB.buildings.FooBuilding = BB.Class.extend({
   initialize: function(scene, resourceManager, options) {
     this.scene = scene;
-    console.log('options: ' + typeof options);
     this.position = options.position || new THREE.Vector2(0, 0);
-    console.log(this.position);
     resourceManager.requestGeometry('models/generator_top.js',
       _.bind(function(geometry) {
         var material = new THREE.MeshNormalMaterial();
@@ -55,6 +53,9 @@ BB.buildings.FooBuilding = BB.Class.extend({
         this.mesh.scale.z = 0.07;
         this.mesh.position.x = this.position.x;
         this.mesh.position.y = this.position.y;
+        //this.mesh.position.x = 0.0;
+        //this.mesh.position.y = 0.0;
+        //this.mesh.position.z = -2.0;
         this.scene.add(this.mesh);
         this.onLoad();
       }, this));
@@ -75,20 +76,16 @@ BB.Module = BB.Class.extend({
     this.provides_[name] = inst;
   },
 
-  injectNew: function(ctor) {
+  injectNew: function(ctor, options) {
     var params = BB.getParameters(ctor.prototype.initialize);
     var injectedParams = params.slice(0, -1);
     var args = [null].concat(_.map(injectedParams, function(p) {
-      console.log(this.provides_);
-      console.log('"' + p + '"');
       if (!this.provides_.hasOwnProperty(p)) {
         throw new Error('Unsatisfied dependency: ' + p);
       }
       return this.provides_[p];
     }, this));
-    // TODO this should only do the last argument thing (that's how it works!)
-    _.each(Array.prototype.slice.call(arguments, 1),
-      function(x) { args.push(x); });
+    if (BB.isDefined(options)) args.push(options);
 
     // http://stackoverflow.com/a/14378462/1480571
     var Factory = ctor.bind.apply(ctor, args);
@@ -96,13 +93,15 @@ BB.Module = BB.Class.extend({
   }
 });
 
-BB.main.IsometricCamera = function() {
+BB.main.IsometricCamera = function(width, height) {
   THREE.Camera.call(this);
   // http://stackoverflow.com/questions/1059200/true-isometric-projection-with-opengl
+
   var dist = Math.sqrt(1.0 / 3.0); // Camera will be one unit away from the origin
   this.position = new THREE.Vector3(dist, dist, dist);
   this.up = new THREE.Vector3(0.0, 1.0, 0.0);
   this.lookAt(new THREE.Vector3(0.0, 0.0, 0.0));
+
   //this.lookAt(dist, dist, dist, /* Camera position */
     //0.0, 0.0, 0.0,              /* Where the camera is pointing at */
     //0.0, 1.0, 0.0);             /* Which direction is up */
@@ -120,9 +119,19 @@ BB.main.Application = BB.Module.extend({
     this.renderer = new THREE.WebGLRenderer();
     this.renderer.setSize(this.screenWidth, this.screenHeight);
 
-    //this.mainCamera = new THREE.PerspectiveCamera(
-    //  75, this.screenWidth / this.screenHeight, 1, 10000);
-    this.mainCamera = new BB.main.IsometricCamera();
+    this.mainCamera = new THREE.PerspectiveCamera(
+      15, this.screenWidth / this.screenHeight, 0.0001, 100); // 75?
+    /*this.mainCamera = new THREE.OrthographicCamera(
+      this.screenWidth / -2,
+      this.screenWidth / 2,
+      this.screenHeight / 2,
+      this.screenHeight / -2,
+      0.0001, 100
+      );*/
+    var dist = Math.sqrt(1.0 / 3.0) * 10.0; // Camera will be one unit away from the origin
+    this.mainCamera.position = new THREE.Vector3(dist, dist, dist);
+    this.mainCamera.lookAt(new THREE.Vector3(0.0, 0.0, 0.0));
+    //this.mainCamera = new BB.main.IsometricCamera(this.screenWidth, this.screenHeight);
     //this.mainCamera.position.z = 500;
     this.mainScene = new THREE.Scene();
 
@@ -137,10 +146,16 @@ BB.main.Application = BB.Module.extend({
       this.screenWidth, this.screenHeight, {
         minFilter: THREE.LinearFilter,
         magFilter: THREE.NearestFilter,
+        format: THREE.RGBAFormat
+      });
+    this.rtTexture2 = new THREE.WebGLRenderTarget(
+      this.screenWidth, this.screenHeight, {
+        minFilter: THREE.LinearFilter,
+        magFilter: THREE.NearestFilter,
         format: THREE.RGBFormat
       });
     var materialScreen = new THREE.ShaderMaterial({
-      uniforms: {tDiffuse: {type: "t", value: this.rtTexture}},
+      uniforms: {tDiffuse: {type: "t", value: this.rtTexture}, tDiffuse2: {type: "t", value: this.rtTexture2}},
       vertexShader: document.getElementById('screenVertexShader').textContent,
       fragmentShader: document.getElementById('screenFragmentShader').textContent,
       depthWrite: false
@@ -149,6 +164,7 @@ BB.main.Application = BB.Module.extend({
     var quad = new THREE.Mesh(plane, materialScreen);
     quad.position.z = -100;
     this.rtScene.add(quad);
+    this.gridScene = new THREE.Scene();
 
     /*var loader = new THREE.JSONLoader();
     loader.load('models/generator_top.js', _.bind(function(geometry) {
@@ -189,6 +205,7 @@ BB.main.Application = BB.Module.extend({
     this.foo2 = this.injectNew(BB.buildings.FooBuilding, {position: new THREE.Vector2(0.9, 0.1)});
     this.foo2 = this.injectNew(BB.buildings.FooBuilding, {position: new THREE.Vector2(0.9, 0.3)});
     this.resourceManager.endLoad(_.bind(this.animate, this));
+    this.addGridLines();
   },
 
   animate: function() {
@@ -211,8 +228,31 @@ BB.main.Application = BB.Module.extend({
       var vector = new THREE.Vector3(this.mousePos.x, this.mousePos.y, 1.0);
       //vector.projectOnVector(new THREE.Vector3(1.0, 0.0, 0.0));
       //vector.applyAxisAngle(new THREE.Vector3(0.0, 1.0, 0.0), Math.PI);
-      this.foo1.mesh.position.x = vector.x;
-      this.foo1.mesh.position.z = vector.y;
+      //this.projector.unprojectVector(vector, this.mainCamera);
+      var RC2 = this.projector.pickingRay(vector, this.mainCamera);
+      var plane2 = new THREE.PlaneGeometry(10, 10);
+      //var plane2 = new THREE.CubeGeometry(0.5, 0.5, 0.5);
+      if (typeof window.bob == 'undefined') {
+        var mat = new THREE.Material({opacity: 0});
+        mat.side = THREE.DoubleSide;
+        window.bob = (new THREE.Mesh(plane2,
+          mat));
+        this.mainScene.add(window.bob);
+        window.bob.rotation.x = Math.PI / 2;
+      } else {
+        window.baz = window.baz || 0;
+        window.baz += 0.01;
+        window.bob.rotation.x = Math.PI / 2;
+      }
+      var intersects = RC2.intersectObject(plane2);
+      //console.log(intersects);
+      //console.log(vector);
+      var dist = Math.sqrt(1.0 / 3.0) * 10.0; // Camera will be one unit away from the origin
+      //console.log(dist);
+      this.foo1.mesh.position.x = vector.x / 20;
+      this.foo1.mesh.position.y = vector.y / 20;
+      this.foo1.mesh.position.z = vector.z / 20;
+      this.foo1.mesh.rotation.y += 0.02;
       //this.foo1.mesh.position.x = this.mousePos.x;
       //this.foo1.mesh.position.z = this.mousePos.y;
     }
@@ -220,14 +260,19 @@ BB.main.Application = BB.Module.extend({
     //console.log(this.mainCamera.position);
     var X = this.mainCamera.position.clone();
     //X.negate();
-    var plane = new THREE.Plane(X, 0.0);
+    //var plane = new THREE.Plane(new THREE.Vector3(Math.sqrt(3), Math.sqrt(3), Math.sqrt(3)), -1000.0);
+    var plane = 2;
     this.projector.unprojectVector(vector, this.mainCamera);
     this.raycaster.set(this.mainCamera.position, vector.sub(this.mainCamera.position).normalize());
     var RC = this.raycaster;
     //var RC = this.projector.pickingRay(vector, this.mainCamera);
-    var intersects = RC.intersectObjects(this.mainScene.children);
+    //var intersects = RC.intersectObjects(this.mainScene.children);
+    //plane = new THREE.PlaneGeometry(1000, 1000);
+    var intersects = RC.intersectObject(window.bob);
     if (intersects.length > 0) {
-      console.log(intersects);
+      //console.log(intersects);
+      this.foo1.mesh.position.copy(intersects[0].point);
+      console.log(intersects[0].point);
     }
     //console.log(this.mousePos);
 
@@ -236,27 +281,29 @@ BB.main.Application = BB.Module.extend({
 
   render: function() {
     this.renderer.clear();
+    this.renderer.setClearColor(0x000000, 0);
     this.renderer.render(this.mainScene, this.mainCamera, this.rtTexture, true);
+    this.renderer.render(this.gridScene, this.mainCamera, this.rtTexture2, true);
     this.renderer.render(this.rtScene, this.rtCamera);
   },
 
   addGridLines: function() {
     var geometry = new THREE.Geometry();
-    geometry.vertices.push(new THREE.Vector3(-800, 0, 0));
-    geometry.vertices.push(new THREE.Vector3(800, 0, 0));
+    geometry.vertices.push(new THREE.Vector3(0, 0, 10));
+    geometry.vertices.push(new THREE.Vector3(0, 0, -10));
     var material = new THREE.LineBasicMaterial({
       color: 0x66FF99,
     });
     for (var i = -50; i < 50; i++) {
       var line = new THREE.Line(geometry, material);
-      line.position.y = i * 100;
-      this.scene.add(line);
+      line.position.x = i * 0.25;
+      this.gridScene.add(line);
     }
     for (var i = -50; i < 50; i++) {
       var line = new THREE.Line(geometry, material);
-      line.rotation.z = Math.PI / 2;
-      line.position.x = i * 100;
-      this.scene.add(line);
+      line.rotation.y = Math.PI / 2;
+      line.position.z = i * 0.25;
+      this.gridScene.add(line);
     }
   },
 
