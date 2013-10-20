@@ -44,13 +44,16 @@ BB.buildings.FooBuilding = BB.Class.extend({
   initialize: function(scene, resourceManager, options) {
     this.scene = scene;
     this.position = options.position || new THREE.Vector2(0, 0);
-    resourceManager.requestGeometry('models/generator_top.js',
+    resourceManager.requestGeometry('models/extractor.js?asdddf',
       _.bind(function(geometry) {
         var material = new THREE.MeshNormalMaterial();
         this.mesh = new THREE.Mesh(geometry, material);
-        this.mesh.scale.x = 0.07;
-        this.mesh.scale.y = 0.15;
-        this.mesh.scale.z = 0.07;
+        //this.mesh.side = THREE.DoubleSide;
+        //this.mesh.scale.x = 0.07;
+        //this.mesh.scale.y = 0.15;
+        //this.mesh.scale.z = 0.07;
+        this.mesh.scale.set(0.3, 0.3, 0.3);
+        //this.mesh.scale.set(0.7, 0.7, 0.7);
         this.mesh.position.x = this.position.x;
         this.mesh.position.y = this.position.y;
         //this.mesh.position.x = 0.0;
@@ -252,7 +255,7 @@ BB.main.Application = BB.Module.extend({
       this.foo1.mesh.position.x = vector.x / 20;
       this.foo1.mesh.position.y = vector.y / 20;
       this.foo1.mesh.position.z = vector.z / 20;
-      this.foo1.mesh.rotation.y += 0.02;
+      //this.foo1.mesh.rotation.y += 0.02;
       //this.foo1.mesh.position.x = this.mousePos.x;
       //this.foo1.mesh.position.z = this.mousePos.y;
     }
