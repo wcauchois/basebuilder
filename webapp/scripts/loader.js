@@ -37,7 +37,7 @@
       _.each(bundle['sources'] || [], function(sourceFile) {
         var scriptElem = document.createElement('script');
         scriptElem.type = 'text/javascript';
-        scriptElem.src = sourceFile;
+        scriptElem.src = sourceFile + '?' + new Date().getTime();
         head.appendChild(scriptElem);
       });
     });
