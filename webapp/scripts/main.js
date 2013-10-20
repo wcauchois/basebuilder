@@ -255,7 +255,7 @@ BB.main.Application = BB.Module.extend({
       this.foo1.mesh.position.x = vector.x / 20;
       this.foo1.mesh.position.y = vector.y / 20;
       this.foo1.mesh.position.z = vector.z / 20;
-      //this.foo1.mesh.rotation.y += 0.02;
+      this.foo1.mesh.rotation.y += 0.005;
       //this.foo1.mesh.position.x = this.mousePos.x;
       //this.foo1.mesh.position.z = this.mousePos.y;
     }
