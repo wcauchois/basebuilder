@@ -96,63 +96,39 @@ BB.Module = BB.Class.extend({
   }
 });
 
-BB.main.IsometricCamera = function(width, height) {
-  THREE.Camera.call(this);
-  // http://stackoverflow.com/questions/1059200/true-isometric-projection-with-opengl
-
-  var dist = Math.sqrt(1.0 / 3.0); // Camera will be one unit away from the origin
-  this.position = new THREE.Vector3(dist, dist, dist);
-  this.up = new THREE.Vector3(0.0, 1.0, 0.0);
-  this.lookAt(new THREE.Vector3(0.0, 0.0, 0.0));
-
-  //this.lookAt(dist, dist, dist, /* Camera position */
-    //0.0, 0.0, 0.0,              /* Where the camera is pointing at */
-    //0.0, 1.0, 0.0);             /* Which direction is up */
-};
-BB.main.IsometricCamera.prototype = Object.create(THREE.Camera.prototype);
-
-BB.main.Application = BB.Module.extend({
+BB.Application = BB.Module.extend({
   initialize: function() {
-    BB.main.Application.__super__.initialize.call(this);
-    //this.screenWidth = window.innerWidth;
-    //this.screenHeight = window.innerHeight;
-    this.screenWidth = 1000;
-    this.screenHeight = 600;
+    BB.Application.__super__.initialize.call(this);
+    this.canvasWidth = 1000;
+    this.canvasHeight = 600;
 
     this.renderer = new THREE.WebGLRenderer();
-    this.renderer.setSize(this.screenWidth, this.screenHeight);
+    this.renderer.setSize(this.canvasWidth, this.canvasHeight);
 
     this.mainCamera = new THREE.PerspectiveCamera(
-      15, this.screenWidth / this.screenHeight, 0.0001, 100); // 75?
-    /*this.mainCamera = new THREE.OrthographicCamera(
-      this.screenWidth / -2,
-      this.screenWidth / 2,
-      this.screenHeight / 2,
-      this.screenHeight / -2,
-      0.0001, 100
-      );*/
+      15, this.canvasWidth / this.canvasHeight, 0.0001, 100);
     var dist = Math.sqrt(1.0 / 3.0) * 10.0; // Camera will be one unit away from the origin
     this.mainCamera.position = new THREE.Vector3(dist, dist, dist);
     this.mainCamera.lookAt(new THREE.Vector3(0.0, 0.0, 0.0));
-    //this.mainCamera = new BB.main.IsometricCamera(this.screenWidth, this.screenHeight);
+    //this.mainCamera = new BB.main.IsometricCamera(this.canvasWidth, this.canvasHeight);
     //this.mainCamera.position.z = 500;
     this.mainScene = new THREE.Scene();
 
     this.rtScene = new THREE.Scene();
     this.rtCamera = new THREE.OrthographicCamera(
-      this.screenWidth / -2, this.screenWidth / 2,
-      this.screenHeight / 2, this.screenHeight / -2,
+      this.canvasWidth / -2, this.canvasWidth / 2,
+      this.canvasHeight / 2, this.canvasHeight / -2,
       -10000, 10000
     );
     this.rtCamera.position.z = 100;
     this.rtTexture = new THREE.WebGLRenderTarget(
-      this.screenWidth, this.screenHeight, {
+      this.canvasWidth, this.canvasHeight, {
         minFilter: THREE.LinearFilter,
         magFilter: THREE.NearestFilter,
         format: THREE.RGBAFormat
       });
     this.rtTexture2 = new THREE.WebGLRenderTarget(
-      this.screenWidth, this.screenHeight, {
+      this.canvasWidth, this.canvasHeight, {
         minFilter: THREE.LinearFilter,
         magFilter: THREE.NearestFilter,
         format: THREE.RGBFormat
@@ -163,7 +139,7 @@ BB.main.Application = BB.Module.extend({
       fragmentShader: document.getElementById('screenFragmentShader').textContent,
       depthWrite: false
     });
-    var plane = new THREE.PlaneGeometry(this.screenWidth, this.screenHeight);
+    var plane = new THREE.PlaneGeometry(this.canvasWidth, this.canvasHeight);
     var quad = new THREE.Mesh(plane, materialScreen);
     quad.position.z = -100;
     this.rtScene.add(quad);
@@ -194,8 +170,8 @@ BB.main.Application = BB.Module.extend({
     this.mousePos = new THREE.Vector2();
     document.addEventListener('mousemove', _.bind(function(event) {
       event.preventDefault();
-      this.mousePos.x = (event.clientX / this.screenWidth) * 2 - 1;
-      this.mousePos.y = -(event.clientY / this.screenHeight) * 2 + 1;
+      this.mousePos.x = (event.clientX / this.canvasWidth) * 2 - 1;
+      this.mousePos.y = -(event.clientY / this.canvasHeight) * 2 + 1;
     }, this), false);
     document.body.appendChild(this.renderer.domElement);
 
@@ -275,7 +251,6 @@ BB.main.Application = BB.Module.extend({
     if (intersects.length > 0) {
       //console.log(intersects);
       this.foo1.mesh.position.copy(intersects[0].point);
-      console.log(intersects[0].point);
     }
     //console.log(this.mousePos);
 
@@ -314,12 +289,12 @@ BB.main.Application = BB.Module.extend({
   }
 }, {
   getInstance: function() {
-    if (!BB.main.Application.instance_) {
-      BB.main.Application.instance_ = new BB.main.Application();
+    if (!BB.Application.instance_) {
+      BB.Application.instance_ = new BB.Application();
     }
-    return BB.main.Application.instance_;
+    return BB.Application.instance_;
   }
 });
 
-BB.main.Application.getInstance().run();
+BB.Application.getInstance().run();
 

@@ -19,6 +19,12 @@ BB.isNull = function(v) {
   return v === null;
 };
 
+// Add a timestamp to the end of the path to a static resource, so that it doesn't
+// get cached.
+BB.timestampedPath = function(originalPath) {
+  return originalPath + '?' + new Date().getTime();
+};
+
 BB.Class = function() {
   if (BB.isDefined(this['initialize'])) {
     this.initialize.apply(this, arguments);

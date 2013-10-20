@@ -37,7 +37,7 @@
       _.each(bundle['sources'] || [], function(sourceFile) {
         var scriptElem = document.createElement('script');
         scriptElem.type = 'text/javascript';
-        scriptElem.src = sourceFile + '?' + new Date().getTime();
+        scriptElem.src = BB.timestampedPath(sourceFile);
         head.appendChild(scriptElem);
       });
     });
