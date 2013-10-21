@@ -44,7 +44,7 @@ BB.buildings.FooBuilding = BB.Class.extend({
   initialize: function(scene, resourceManager, options) {
     this.scene = scene;
     this.position = options.position || new THREE.Vector2(0, 0);
-    resourceManager.requestGeometry('models/extractor.js?asdddf',
+    resourceManager.requestGeometry(BB.timestampedPath('models/extractor.js'),//'models/extractor.js?asdddf',
       _.bind(function(geometry) {
         var material = new THREE.MeshNormalMaterial();
         this.mesh = new THREE.Mesh(geometry, material);
