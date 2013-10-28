@@ -1,49 +1,10 @@
 
-BB.namespace('BB.main');
-
-BB.namespace('BB.debug'); // XXX
-BB.debug.Debugger = BB.Class.extend({
-  initialize: function() {
-    //this.debugSlidersEl = document.getElementById('debugSliders');
-  }
-});
-
-/*
-BB.EventTarget = BB.Class.extend({
-  initialize: function() {
-    this.listenerMap_ = {};
-  },
-
-  getListeners_: function(eventName) {
-    if (!this.listenerMap_.hasOwnProperty(eventName)) {
-      this.listenerMap_[eventName] = new Array();
-    }
-    return this.listenerMap_[eventName];
-  },
-
-  on: function(eventName, callback) {
-    this.getListeners_(eventName).push(callback);
-  },
-
-  trigger: function(eventName) {
-    var listeners = this.getListeners_(eventName);
-    var listenerArgs = arguments.slice(1);
-    listeners.forEach(function(listener) {
-      listener.apply(
-    });
-  }
-});
-*/
-
-//BB.Debug = new BB.debug.Debugger(); // Convenient alias for instance.
-
-
 BB.namespace('BB.buildings');
 
 BB.buildings.FooBuilding = BB.Class.extend({
   initialize: function(scene, resourceManager, options) {
     this.scene = scene;
-    this.position = options.position || new THREE.Vector2(0, 0);
+    this.position = options.position || new THREE.Vector2();
     resourceManager.requestGeometry(BB.timestampedPath('models/extractor.js'),//'models/extractor.js?asdddf',
       _.bind(function(geometry) {
         var material = new THREE.MeshNormalMaterial();
@@ -69,15 +30,6 @@ BB.buildings.FooBuilding = BB.Class.extend({
 });
 
 BB.Application = BB.Module.extend({
-  newRenderTarget_: function() {
-    return new THREE.WebGLRenderTarget(
-      this.canvasWidth, this.canvasHeight, {
-        minFilter: THREE.LinearFilter,
-        magFilter: THREE.NearestFilter,
-        format: THREE.RGBAFormat
-      });
-  },
-
   setupRTQuad_: function() {
     var materialScreen = new THREE.ShaderMaterial({
       uniforms: {
@@ -166,7 +118,7 @@ BB.Application = BB.Module.extend({
     this.foo2 = this.injectNew(BB.buildings.FooBuilding, {position: new THREE.Vector2(0.9, 0.1)});
     this.foo2 = this.injectNew(BB.buildings.FooBuilding, {position: new THREE.Vector2(0.9, 0.3)});
     this.resourceManager.endLoad(_.bind(this.animate, this));
-    this.addGridLines();
+    this.addGridLines_();
 
     document.body.appendChild(this.renderer.domElement);
   },
@@ -189,8 +141,6 @@ BB.Application = BB.Module.extend({
       this.foo1.mesh.position.copy(this.worldMousePos_);
     }
 
-    //console.log(this.mousePos);
-
     this.render();
   },
 
@@ -202,7 +152,7 @@ BB.Application = BB.Module.extend({
     this.renderer.render(this.rtScene, this.rtCamera);
   },
 
-  addGridLines: function() {
+  addGridLines_: function() {
     var geometry = new THREE.Geometry();
     geometry.vertices.push(new THREE.Vector3(0, 0, 10));
     geometry.vertices.push(new THREE.Vector3(0, 0, -10));
@@ -234,4 +184,3 @@ BB.Application = BB.Module.extend({
 });
 
 BB.Application.getInstance().run();
-
