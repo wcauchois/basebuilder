@@ -4,18 +4,20 @@
     <title>BaseBuilder</title>
     <script id="screenFragmentShader" type="x-shader/x-fragment">
       varying vec2 vUv;
-      uniform sampler2D tDiffuse;
-      uniform sampler2D tDiffuse2;
+      uniform sampler2D tMainDiffuse;
+      uniform sampler2D tBackgroundDiffuse;
 
       const float pixelSize = 0.003;
 
       void main() {
-        float x = floor(vUv.x / pixelSize) * pixelSize;
-        float y = floor(vUv.y / pixelSize) * pixelSize;
-        vec4 color1 = texture2D(tDiffuse, vec2(x, y));
-        //gl_FragColor = vec4(1.0-color1.w, 0, 0, 1);
-        vec4 color2 = texture2D(tDiffuse2, vec2(vUv.x, vUv.y));
-        gl_FragColor = color1 + (color2 * (1.0 -color1.w));
+        float pixelX = floor(vUv.x / pixelSize) * pixelSize;
+        float pixelY = floor(vUv.y / pixelSize) * pixelSize;
+        vec4 mainColor = texture2D(tMainDiffuse, vec2(pixelX, pixelY));
+        vec4 backgroundColor = texture2D(tBackgroundDiffuse, vUv);
+        // This performs ghetto occlusion by discarding the "background" color if the
+        // main color (at this fragment) has alpha >0.
+        vec4 occludedBackgroundColor = (backgroundColor * (1.0 - mainColor.w));
+        gl_FragColor = mainColor + occludedBackgroundColor;
       }
     </script>
 
@@ -45,4 +47,3 @@
     </div>
   </body>
 </html>
-

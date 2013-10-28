@@ -82,3 +82,31 @@ BB.abstractMethod = function() {
   throw new Error("Abstract method not implemented!");
 };
 
+// Ghetto dependency injection
+BB.Module = BB.Class.extend({
+  initialize: function(defaultProvisions) {
+    this.provides_ =
+      BB.isDefined(defaultProvisions) ? _.extend({}, defaultProvisions) : {};
+  },
+
+  provide: function(name, inst) {
+    this[name] = inst;
+    this.provides_[name] = inst;
+  },
+
+  injectNew: function(ctor, options) {
+    var params = BB.getParameters(ctor.prototype.initialize);
+    var injectedParams = params.slice(0, -1);
+    var args = [null].concat(_.map(injectedParams, function(p) {
+      if (!this.provides_.hasOwnProperty(p)) {
+        throw new Error('Unsatisfied dependency: ' + p);
+      }
+      return this.provides_[p];
+    }, this));
+    if (BB.isDefined(options)) args.push(options);
+
+    // http://stackoverflow.com/a/14378462/1480571
+    var Factory = ctor.bind.apply(ctor, args);
+    return new Factory();
+  }
+});
