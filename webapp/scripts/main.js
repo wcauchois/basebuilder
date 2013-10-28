@@ -93,6 +93,7 @@ BB.Application = BB.Module.extend({
 
     this.raycaster = new THREE.Raycaster();
     this.projector = new THREE.Projector();
+
     this.mousePosNDC = new THREE.Vector2(); // Normalized device coordinates
     document.addEventListener('mousemove', _.bind(function(event) {
       event.preventDefault();
@@ -108,7 +109,7 @@ BB.Application = BB.Module.extend({
     this.mainScene.add(this.groundPlane);
     this.worldMousePos_ = new THREE.Vector3();
 
-
+    this.addGridLines_();
     this.provide('resourceManager', new BB.ResourceManager());
     this.provide('scene', this.mainScene);
     this.resourceManager.beginLoad();
@@ -118,7 +119,6 @@ BB.Application = BB.Module.extend({
     this.foo2 = this.injectNew(BB.buildings.FooBuilding, {position: new THREE.Vector2(0.9, 0.1)});
     this.foo2 = this.injectNew(BB.buildings.FooBuilding, {position: new THREE.Vector2(0.9, 0.3)});
     this.resourceManager.endLoad(_.bind(this.animate, this));
-    this.addGridLines_();
 
     document.body.appendChild(this.renderer.domElement);
   },
