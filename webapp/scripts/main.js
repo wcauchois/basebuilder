@@ -102,7 +102,14 @@ BB.Application = BB.Module.extend({
     }, this), false);
 
     var planeGeometry = new THREE.PlaneGeometry(10, 10);
-    var invisibleMaterial = new THREE.Material({opacity: 0});
+    var invisibleMaterial = new THREE.ShaderMaterial({
+      vertexShader:
+        'void main() { gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }',
+      fragmentShader:
+        'void main() { gl_FragColor = vec4(0.0, 0.0, 0.0, 0.0); }',
+      depthWrite: false,
+      transparent: true
+    });
     invisibleMaterial.side = THREE.DoubleSide;
     this.groundPlane = new THREE.Mesh(planeGeometry, invisibleMaterial);
     this.groundPlane.rotation.x = Math.PI / 2;
@@ -159,6 +166,7 @@ BB.Application = BB.Module.extend({
     var material = new THREE.LineBasicMaterial({
       color: 0x4d4d4d
     });
+
     for (var i = -50; i < 50; i++) {
       var line = new THREE.Line(geometry, material);
       line.position.x = i * 0.25;
