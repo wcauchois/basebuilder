@@ -17,6 +17,15 @@ body {
   #viewportContainer {
     border: 2px solid #999;
     float: right;
+    position: relative;
+
+    .moveUp { // XXX
+      width: 1000px;
+      height: 30px;
+      position: absolute;
+      //background: url('img/move_up.png');
+      opacity: 0.9;
+    }
   }
 
   .status {
@@ -85,6 +94,7 @@ body {
 .fuelTankIcon {
   .icon('img/fuel_tank_icon.png', 'img/fuel_tank_icon_hover.png');
 }
+
 .torusPlatformIcon {
   .icon('img/torus_platform_icon.png', 'img/torus_platform_icon_hover.png');
 }
