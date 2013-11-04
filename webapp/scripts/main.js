@@ -1,31 +1,105 @@
 
 BB.namespace('BB.buildings');
 
-BB.buildings.FooBuilding = BB.Class.extend({
+BB.Building = BB.Class.extend({
   initialize: function(scene, resourceManager, options) {
     this.scene = scene;
-    this.position = options.position || new THREE.Vector2();
-    resourceManager.requestGeometry(BB.timestampedPath('models/extractor.js'),//'models/extractor.js?asdddf',
+    resourceManager.requestGeometry(BB.timestampedPath(this.getModelPath()),
       _.bind(function(geometry) {
         var material = new THREE.MeshNormalMaterial();
         this.mesh = new THREE.Mesh(geometry, material);
-        //this.mesh.side = THREE.DoubleSide;
-        //this.mesh.scale.x = 0.07;
-        //this.mesh.scale.y = 0.15;
-        //this.mesh.scale.z = 0.07;
-        this.mesh.scale.set(0.3, 0.3, 0.3);
-        //this.mesh.scale.set(0.7, 0.7, 0.7);
-        this.mesh.position.x = this.position.x;
-        this.mesh.position.y = this.position.y;
-        //this.mesh.position.x = 0.0;
-        //this.mesh.position.y = 0.0;
-        //this.mesh.position.z = -2.0;
+        if (options.position) this.mesh.position.copy(options.position);
+        this.setupMesh();
         this.scene.add(this.mesh);
-        this.onLoad();
       }, this));
   },
 
-  onLoad: function() {
+  removeSelf: function() {
+    this.scene.remove(this.mesh);
+  },
+
+  setPosition: function(vec) {
+    this.mesh.position.copy(vec);
+  },
+
+  getModelPath: BB.abstractMethod
+});
+
+BB.buildings.FuelTank = BB.Building.extend({
+  getModelPath: function() {
+    return 'models/fuel_tank.js';
+  },
+
+  setupMesh: function() {
+    this.mesh.scale.set(0.20, 0.20, 0.20);
+  }
+});
+
+BB.buildings.Extractor = BB.Building.extend({
+  getModelPath: function() {
+    return 'models/extractor.js';
+  },
+
+  setupMesh: function() {
+    this.mesh.scale.set(0.26, 0.26, 0.26);
+  }
+});
+
+BB.buildings.TorusPlatform = BB.Building.extend({
+  getModelPath: function() {
+    return 'models/torus_platform.js';
+  },
+
+  setupMesh: function() {
+    this.mesh.scale.set(0.09, 0.09, 0.09);
+  }
+});
+
+BB.ControlsView = Backbone.View.extend({
+  initialize: function() {
+    this.$footerText = this.$el.find('.footerText');
+  },
+
+  events: {
+    'mouseover .extractorIcon': 'mouseOverExtractor',
+    'mouseout .extractorIcon': 'clearFooterText',
+    'click .extractorIcon': 'clickExtractor',
+
+    'mouseover .torusPlatformIcon': 'mouseOverTorusPlatform',
+    'mouseout .torusPlatformIcon': 'clearFooterText',
+    'click .torusPlatformIcon': 'clickTorusPlatform',
+
+    'mouseover .fuelTankIcon': 'mouseOverFuelTank',
+    'mouseout .fuelTankIcon': 'clearFooterText',
+    'click .fuelTankIcon': 'clickFuelTank'
+  },
+
+  clearFooterText: function() {
+    this.$footerText.text('');
+  },
+
+  clickFuelTank: function() {
+    this.trigger('clickedFuelTank');
+  },
+
+  mouseOverFuelTank: function() {
+    this.$footerText.text('Fuel Tank');
+  },
+
+  clickTorusPlatform: function() {
+    this.trigger('clickedTorusPlatform');
+  },
+
+  mouseOverTorusPlatform: function() {
+    this.$footerText.text('Torus Platform');
+  },
+
+  clickExtractor: function() {
+    this.trigger('clickedExtractor');
+  },
+
+  mouseOverExtractor: function() {
+    this.$footerText.text('Extractor');
   }
 });
 
@@ -97,8 +171,8 @@ BB.Application = BB.Module.extend({
     this.mousePosNDC = new THREE.Vector2(); // Normalized device coordinates
     document.addEventListener('mousemove', _.bind(function(event) {
       event.preventDefault();
-      this.mousePosNDC.x = (event.clientX / this.canvasWidth) * 2 - 1;
-      this.mousePosNDC.y = -(event.clientY / this.canvasHeight) * 2 + 1;
+      this.mousePosNDC.x = (event.offsetX / this.canvasWidth) * 2 - 1;
+      this.mousePosNDC.y = -(event.offsetY / this.canvasHeight) * 2 + 1;
     }, this), false);
 
     var planeGeometry = new THREE.PlaneGeometry(10, 10);
@@ -120,14 +194,28 @@ BB.Application = BB.Module.extend({
     this.provide('resourceManager', new BB.ResourceManager());
     this.provide('scene', this.mainScene);
     this.resourceManager.beginLoad();
-    this.foo1 = this.injectNew(BB.buildings.FooBuilding, {});
-    this.foo2 = this.injectNew(BB.buildings.FooBuilding, {position: new THREE.Vector2(0.5, 0.1)});
-    this.foo2 = this.injectNew(BB.buildings.FooBuilding, {position: new THREE.Vector2(0.7, 0.1)});
-    this.foo2 = this.injectNew(BB.buildings.FooBuilding, {position: new THREE.Vector2(0.9, 0.1)});
-    this.foo2 = this.injectNew(BB.buildings.FooBuilding, {position: new THREE.Vector2(0.9, 0.3)});
+    //this.injectNew(BB.buildings.FuelTank, {}); // XXX
     this.resourceManager.endLoad(_.bind(this.animate, this));
 
-    document.body.appendChild(this.renderer.domElement);
+    this.renderer.domElement.classList.add('viewport');
+    this.renderer.domElement.addEventListener('click', _.bind(this.onCanvasClick_, this));
+    document.getElementById('viewportContainer').appendChild(this.renderer.domElement);
+
+    this.controlsView = new BB.ControlsView({el: $('.controls')});
+    this.controlsView.on('clickedExtractor', _.bind(
+      this.startPlacing, this, BB.buildings.Extractor));
+    this.controlsView.on('clickedTorusPlatform', _.bind(
+      this.startPlacing, this, BB.buildings.TorusPlatform));
+    this.controlsView.on('clickedFuelTank', _.bind(
+      this.startPlacing, this, BB.buildings.FuelTank));
+    this.placingState = null;
+  },
+
+  startPlacing: function(klass) {
+    if (this.placingState) {
+      this.placingState.building.removeSelf();
+    }
+    this.placingState = {building: this.injectNew(klass, {})};
   },
 
   updateWorldMousePos_: function() {
@@ -140,12 +228,20 @@ BB.Application = BB.Module.extend({
     if (intersects.length > 0) this.worldMousePos_.copy(intersects[0].point);
   },
 
+  onCanvasClick_: function() {
+    if (this.placingState) {
+      var building = this.placingState.building;
+      // TODO something
+      this.placingState = null;
+    }
+  },
+
   animate: function() {
     requestAnimationFrame(_.bind(this.animate, this));
-
     this.updateWorldMousePos_();
-    if (this.foo1 && this.foo1.mesh) {
-      this.foo1.mesh.position.copy(this.worldMousePos_);
+
+    if (this.placingState) {
+      this.placingState.building.setPosition(this.worldMousePos_);
     }
 
     this.render();

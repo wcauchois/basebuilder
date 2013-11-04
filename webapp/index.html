@@ -33,6 +33,8 @@
     <!-- Third-party includes -->
     <script type="text/javascript" src="3rdparty/three.min.js"></script>
     <script type="text/javascript" src="3rdparty/underscore-min.js"></script>
+    <script type="text/javascript" src="3rdparty/jquery.min.js"></script>
+    <script type="text/javascript" src="3rdparty/backbone-min.js"></script>
     <!-- Application scripts -->
     <script type="text/javascript" src="scripts/base.js"></script>
     <!-- Load the rest from bundles.json -->
@@ -40,10 +42,30 @@
 
     <link rel="stylesheet/less" type="text/css" href="styles.less" />
     <script type="text/javascript" src="3rdparty/less-1.4.1.min.js"></script>
+    <link href="font/droid-sans.css" rel="stylesheet" type="text/css">
   </head>
   <body>
-    <div id="debugSliders">
-      <input type="range" min="0" max="100" />
+    <div class="main">
+      <div class="status">
+        <div class="massContainer">
+          <span class="mass">2,000 <span class="delta">(+10)</span></span>
+        </div>
+        <div class="energyContainer">
+          <span class="energy">45,332 <span class="delta">(+22)</span></span>
+        </div>
+      </div>
+      <div class="controls">
+        <div class="extractorIcon"></div>
+        <div class="torusPlatformIcon"></div>
+        <div class="fuelTankIcon"></div>
+        <div class="clearButton">Clear Selection</div>
+        <div class="footerText"></div>
+      </div>
+      <div id="viewportContainer">
+      </div>
     </div>
+    <!--<div id="debugSliders">
+      <input type="range" min="0" max="100" />
+    </div>-->
   </body>
 </html>

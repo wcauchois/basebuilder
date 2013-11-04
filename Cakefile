@@ -41,7 +41,7 @@ build_blender_asset = (name, cb) ->
   ], cb
 
 task 'serve', 'Spawn a web server for development', (options) ->
-  file_server = new static_.Server('./webapp')
+  file_server = new static_.Server('./webapp', cache: false)
   last_request_time = null
   http.createServer((request, response) ->
     request.on('end', () ->

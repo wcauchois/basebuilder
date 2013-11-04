@@ -1,5 +1,94 @@
 
+body {
+  background-color: #000;
+  color: #fff;
+  font-family: 'Droid Sans', sans-serif;
+}
+
 #debugSliders {
   position: absolute;
 }
 
+.main {
+  width: calc(1006px + 150px);
+  height: 600px;
+  margin: 80px auto 0 auto;
+
+  #viewportContainer {
+    border: 2px solid #999;
+    float: right;
+  }
+
+  .status {
+    width: 300px;
+    margin-left: calc(1006px + 150px - 300px - 14px);
+    padding: 5px;
+    border-left: 2px solid #999;
+    border-top: 2px solid #999;
+    border-right: 2px solid #999;
+    cursor: default;
+
+    .massContainer, .energyContainer {
+      display: inline-block;
+      width: 144px;
+      text-align: center;
+    }
+
+    .mass {
+      color: #FF9933;
+    }
+
+    .energy {
+      color: #0066FF;
+    }
+  }
+
+  .controls {
+    width: 150px;
+    height: 604px;
+    float: left;
+    position: relative;
+    border-left: 2px solid #999;
+    border-top: 2px solid #999;
+    border-bottom: 2px solid #999;
+
+    .footerText {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      text-align: center;
+      width: 140px;
+      cursor: default;
+      margin: 5px;
+    }
+
+    .clearButton {
+      color: #999;
+      margin-top: 5px;
+      text-align: center;
+      &:hover {
+        color: #fff;
+        cursor: pointer;
+      }
+    }
+  }
+}
+
+.icon(@img, @hoverImg) {
+  cursor: pointer;
+  width: 150px;
+  height: 150px;
+  background: url(@img);
+  &:hover {background: url(@hoverImg);}
+}
+
+.fuelTankIcon {
+  .icon('img/fuel_tank_icon.png', 'img/fuel_tank_icon_hover.png');
+}
+.torusPlatformIcon {
+  .icon('img/torus_platform_icon.png', 'img/torus_platform_icon_hover.png');
+}
+
+.extractorIcon {
+  .icon('img/extractor_icon.png', 'img/extractor_icon_hover.png');
+}
