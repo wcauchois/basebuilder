@@ -35,6 +35,7 @@
     <script type="text/javascript" src="3rdparty/underscore-min.js"></script>
     <script type="text/javascript" src="3rdparty/jquery.min.js"></script>
     <script type="text/javascript" src="3rdparty/backbone-min.js"></script>
+    <script type="text/javascript" src="3rdparty/numeral.min.js"></script>
     <!-- Application scripts -->
     <script type="text/javascript" src="scripts/base.js"></script>
     <!-- Load the rest from bundles.json -->
@@ -50,17 +51,22 @@
     </div>
     <div class="main">
       <div class="status">
-        <div class="massContainer">
-          <span class="mass">2,000 <span class="delta">(+10)</span></span>
+        <div class="massContainer"
+          title="Mass">
+          <span class="mass"><span class="num">0</span> <span class="rate">(+0)</span></span>
         </div>
-        <div class="energyContainer">
-          <span class="energy">45,332 <span class="delta">(+22)</span></span>
+        <div class="energyContainer"
+          title="Energy">
+          <span class="energy"><span class="num">0</span> <span class="rate">(+0)</span></span>
         </div>
       </div>
       <div class="controls">
-        <div class="extractorIcon"></div>
-        <div class="torusPlatformIcon"></div>
-        <div class="fuelTankIcon"></div>
+        <div class="extractorIcon buildingButton"
+          title="Extractors are the most efficient mass-harvesting devices, burrowing deep into the crust. It's said that at the height of the war effort, a planet covered in extractors split into pieces after being harvested unsustainably."></div>
+        <div class="torusPlatformIcon buildingButton"
+          title="Torus platforms can harvest mass in addition to converting a small amount of it into energy. The details of the process are highly proprietary, but are said to involve reactions between synthetic molecules."></div>
+        <div class="fuelTankIcon buildingButton"
+          title="Fuel tanks convert a small amount of mass into a larger amount of energy. Ideally pure carbon is used as fuel, but desperate commanders have been known to use biomass."></div>
         <div class="clearButton">Clear Selection</div>
         <div class="footerText"></div>
       </div>

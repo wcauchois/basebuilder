@@ -22,6 +22,10 @@ BB.Building = BB.Class.extend({
     this.mesh.position.copy(vec);
   },
 
+  getResourceRates: function() {
+    return {};
+  },
+
   getModelPath: BB.abstractMethod
 });
 
@@ -32,7 +36,9 @@ BB.buildings.FuelTank = BB.Building.extend({
 
   setupMesh: function() {
     this.mesh.scale.set(0.20, 0.20, 0.20);
-  }
+  },
+
+  getResourceRates: function() { return {energy: 10.0, mass: -0.5}; }
 });
 
 BB.buildings.Extractor = BB.Building.extend({
@@ -42,7 +48,9 @@ BB.buildings.Extractor = BB.Building.extend({
 
   setupMesh: function() {
     this.mesh.scale.set(0.26, 0.26, 0.26);
-  }
+  },
+
+  getResourceRates: function() { return {mass: 5.0}; }
 });
 
 BB.buildings.TorusPlatform = BB.Building.extend({
@@ -52,7 +60,9 @@ BB.buildings.TorusPlatform = BB.Building.extend({
 
   setupMesh: function() {
     this.mesh.scale.set(0.09, 0.09, 0.09);
-  }
+  },
+
+  getResourceRates: function() { return {mass: 2.5, energy: 2.5}; }
 });
 
 BB.ControlsView = Backbone.View.extend({
@@ -100,6 +110,111 @@ BB.ControlsView = Backbone.View.extend({
 
   mouseOverExtractor: function() {
     this.$footerText.text('Extractor');
+  }
+});
+
+BB.Tooltip = BB.Class.extend({
+  initialize: function(el) {
+    this.$el = $(el);
+    this.$el.hover(
+      _.bind(this.mouseOver, this),
+      _.bind(this.mouseOut, this)
+    );
+    this.tooltipText = this.$el.attr('title');
+    // Remove title so it doesn't show up redundantly with the tooltip
+    this.$el.attr('title', '');
+    this.makeAndAppendTooltip();
+  },
+
+  updatePosition: function() {
+    var tooltipWidth = 200;
+    var position = this.$el.offset();
+    this.$tooltip.css({
+      'top': '' + (position.top + this.$el.height()) + 'px',
+      'left': '' + Math.round(
+        position.left + (this.$el.width() / 2.0) - (tooltipWidth / 2.0)
+      ) + 'px',
+      'width': '' + tooltipWidth + 'px'
+    });
+  },
+
+  makeAndAppendTooltip: function() {
+    this.$tooltip = $('<div></div>');
+    this.$tooltip.text(this.tooltipText);
+    this.$tooltip.addClass('bb-tooltip');
+    $('body').append(this.$tooltip);
+  },
+
+  mouseOver: function() {
+    this.updatePosition();
+    this.$tooltip.slideDown(200);
+  },
+
+  mouseOut: function() {
+    this.$tooltip.hide();
+  }
+}, {
+  tooltip: function(el) {
+    return new BB.Tooltip(el);
+  }
+});
+
+BB.ResourcesView = Backbone.View.extend({
+  initialize: function() {
+    this.buildings = [];
+    this.currentResources = {mass: 0, energy: 0};
+    this.currentRates = {mass: 0, energy: 0};
+
+    this.lastUpdate = new Date().getTime();
+    var boundUpdate = _.bind(this.update, this);
+    setInterval(function() {
+      requestAnimationFrame(boundUpdate);
+    }, 100);
+
+    this.$energy = this.$el.find('.energyContainer');
+    this.$mass = this.$el.find('.massContainer');
+
+    BB.Tooltip.tooltip(this.$energy);
+    BB.Tooltip.tooltip(this.$mass);
+
+    this.update();
+  },
+
+  updateContainer: function($container, resourceName) {
+    var num = this.currentResources[resourceName];
+    var rate = this.currentRates[resourceName];
+
+    $container.find('.num').text(numeral(num).format('0,0'));
+    $container.find('.rate').text('(' + (rate >= 0.0 ? '+' : '') + numeral(rate).format('0,0.0') + ')');
+  },
+
+  update: function() {
+    var now = new Date().getTime();
+    var timeDelta = now - this.lastUpdate;
+    this.lastUpdate = now;
+
+    _.each(this.currentResources, function(v, k) {
+      this.currentResources[k] += (this.currentRates[k] * timeDelta / 500.0);
+    }, this);
+
+    this.updateContainer(this.$energy, 'energy');
+    this.updateContainer(this.$mass, 'mass');
+  },
+
+  calcRates: function() {
+    var rateTotals = {mass: 0, energy: 0};
+    _.each(this.buildings, function(b) {
+      var rates = b.getResourceRates();
+      _.each(rates, function(v, k) {
+        rateTotals[k] += v;
+      });
+    });
+    return rateTotals;
+  },
+
+  onBuildingAdded: function(building) {
+    this.buildings.push(building);
+    this.currentRates = this.calcRates();
   }
 });
 
@@ -209,6 +324,11 @@ BB.Application = BB.Module.extend({
     this.controlsView.on('clickedFuelTank', _.bind(
       this.startPlacing, this, BB.buildings.FuelTank));
     this.placingState = null;
+
+    this.resourcesView = new BB.ResourcesView({el: $('.status')});
+    _.each($('.buildingButton').toArray(), function(e) {
+      BB.Tooltip.tooltip(e);
+    });
   },
 
   startPlacing: function(klass) {
@@ -231,7 +351,7 @@ BB.Application = BB.Module.extend({
   onCanvasClick_: function() {
     if (this.placingState) {
       var building = this.placingState.building;
-      // TODO something
+      this.resourcesView.onBuildingAdded(building);
       this.placingState = null;
     }
   },
